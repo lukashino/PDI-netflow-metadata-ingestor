@@ -15,22 +15,23 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdbool.h>
+#include "linked_list.h"
 
 #define KAFKA_SERVER_IP "51.116.188.112:9092"
 #define KAFKA_TOPIC "quickstart-events"
 
+#define UNUSED(x) (void)(x)
+
 static volatile sig_atomic_t run = 1;
 static volatile bool keepRunning = true;
-
-static int quiet = 0;
-static char err_str[512];
-static char tmp[16];
 
 rd_kafka_t *rk;
 rd_kafka_topic_t *rkt;
 rd_kafka_conf_t *conf;
 rd_kafka_topic_conf_t *topic_conf;
 rd_kafka_resp_err_t err;
+
+flow_record_t *list = NULL;
 
 static void msg_delivered(rd_kafka_t *rk, const rd_kafka_message_t *rkmessage, void *opaque);
 

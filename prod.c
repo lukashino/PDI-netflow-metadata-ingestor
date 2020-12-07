@@ -55,40 +55,50 @@ void sniff_packets() {
         received_data_size = recvfrom(raw_socket, buffer, IP_MAXPACKET, 0, NULL, NULL);
         if (received_data_size < 0) {
             printf("Recvfrom error!\n");
-            return;
+            break;
         }
         process_packet(buffer, received_data_size);
     }
     close(raw_socket);
+    free(buffer);
 }
 
 void process_packet(unsigned char *buffer, ssize_t size) {
     // get IP header and data after IP header
     struct iphdr *ip_header = (struct iphdr *) buffer;
     unsigned char *ip_data = buffer + ip_header->ihl * 4;
-    // pretty-format IP address
-    struct in_addr src_ip_addr, dst_ip_addr;
-    src_ip_addr.s_addr = ip_header->saddr;
-    dst_ip_addr.s_addr = ip_header->daddr;
-    fprintf(stdout, "Source IP: %s\n", inet_ntoa(src_ip_addr));
-    fprintf(stdout, "Destination IP: %s\n", inet_ntoa(dst_ip_addr));
+    // insert packet into list
+    ssize_t payload = size - ip_header->ihl * 4;
+    packet_t *packet = malloc(sizeof(packet_t));
+    packet->src_addr = ip_header->saddr;
+    packet->dst_addr = ip_header->daddr;
+
     if (ip_header->protocol == 6) { // TCP
         struct tcphdr *tcp_header = (struct tcphdr *) ip_data;
-        fprintf(stdout, "TCP Source Port      : %u\n", ntohs(tcp_header->source));
-        fprintf(stdout, "TCP Destination Port : %u\n", ntohs(tcp_header->dest));
+        strcpy(packet->protocol, "TCP");
+        packet->src_port = ntohs(tcp_header->source);
+        packet->dst_port = ntohs(tcp_header->dest);
+        payload -= tcp_header->doff * 4;
     } else if (ip_header->protocol == 17) { // UDP
         struct udphdr *udp_header = (struct udphdr *) ip_data;
-        fprintf(stdout, "UDP Source Port      : %d\n", ntohs(udp_header->source));
-        fprintf(stdout, "UDP Destination Port : %d\n", ntohs(udp_header->dest));
+        strcpy(packet->protocol, "UDP");
+        packet->src_port = ntohs(udp_header->source);
+        packet->dst_port = ntohs(udp_header->dest);
+        payload -= sizeof(udp_header);
     }
+    insert_packet(&list, *packet, payload);
+    free(packet);
 }
 
 void intHandler(int dummy) {
+    UNUSED(dummy);
     printf("Stopping program...\n");
     keepRunning = false;
 }
 
 int main(int argc, char **argv) {
+    UNUSED(argc);
+    UNUSED(argv);
     char brokers[1024];
     char topic[256];
     char err_str[512];
@@ -132,11 +142,13 @@ int main(int argc, char **argv) {
     // ****************************
     // ****** KAFKA  SEND *********
     // ****************************
+    // TODO posielanie listu a nie tohto stringu
     strcpy(buf, "ahoj");
     size_t len = strlen(buf);
     kafka_send(buf, len);
 
     sniff_packets();
+    destroy_flow_records(list);
 
     // ****************************
     // ****** KAFKA DESTROY *********
