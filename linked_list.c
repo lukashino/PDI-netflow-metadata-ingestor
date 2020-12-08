@@ -84,6 +84,27 @@ flow_record_entry_t *create_flow_record_entry(ssize_t payload_size) {
     return l;
 }
 
+void destroy_flow_record(flow_record_t *list,flow_record_t *node) {
+    flow_record_t *tmp = list;
+    if(tmp == node)
+    {
+        destroy_flow_record_entries(tmp->record);
+        free(tmp);
+        return;
+    }
+
+    while(tmp->next != node )
+        {   if(!tmp->next)
+                return;
+            tmp=tmp->next;
+
+        }
+        tmp->next = node->next;
+        destroy_flow_record_entries(node->record);
+        free(node);
+    
+}
+
 void destroy_flow_records(flow_record_t *list) {
     flow_record_t *tmp = list;
     while (tmp) {

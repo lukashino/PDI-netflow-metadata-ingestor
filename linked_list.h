@@ -41,6 +41,8 @@ flow_record_t *create_flow_record(packet_t *data, ssize_t payload_size);
 
 flow_record_entry_t *create_flow_record_entry(ssize_t payload_size);
 
+void destroy_flow_record(flow_record_t *list, flow_record_t *node);
+
 void destroy_flow_records(flow_record_t *list);
 
 void destroy_flow_record_entries(flow_record_entry_t *list);
