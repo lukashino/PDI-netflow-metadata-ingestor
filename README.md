@@ -16,3 +16,9 @@ For Python you need `pip3 install kafka-python`.
 - run the consumer `python3 cons.py`
 - run the prod.c file `./prod`
 - message should appear on consumer's window
+
+## Run script
+Dependencies:
+```
+sudo apt-get install -y tcpreplay
+```

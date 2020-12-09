@@ -48,7 +48,7 @@ void sniff_packets() {
     unsigned char *buffer = (unsigned char *) malloc(IP_MAXPACKET);
     int raw_socket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
     if (raw_socket < 0) {
-        fprintf(stderr, "Socket Error!\n");
+        fprintf(stderr, "Socket Error %d!\n", raw_socket);
         return;
     }
     while (keepRunning) {
