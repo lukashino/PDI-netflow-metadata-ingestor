@@ -1,16 +1,18 @@
 #include "prod.h"
 #include <pthread.h>
+
 /**
  * Message delivery report callback using the richer rd_kafka_message_t object.
  */
 static void msg_delivered(rd_kafka_t *rk,
                           const rd_kafka_message_t *rkmessage, void *opaque) {
-    if (rkmessage->err)
+    if (rkmessage->err) {
         printf("FAILED\n");
         // fprintf(stderr, "%% Message delivery failed (broker %"PRId32"): %s\n", rd_kafka_message_broker_id(rkmessage), rd_kafka_err2str(rkmessage->err));
-    else
+    } else {
         printf("DELIVERED\n");
-    // fprintf(stderr, "%% Message delivered (%zd bytes, offset %"PRId64", partition %"PRId32", broker %"PRId32"): %.*s\n", rkmessage->len, rkmessage->offset, rkmessage->partition, rd_kafka_message_broker_id(rkmessage), (int)rkmessage->len, (const char *)rkmessage->payload);
+        // fprintf(stderr, "%% Message delivered (%zd bytes, offset %"PRId64", partition %"PRId32", broker %"PRId32"): %.*s\n", rkmessage->len, rkmessage->offset, rkmessage->partition, rd_kafka_message_broker_id(rkmessage), (int)rkmessage->len, (const char *)rkmessage->payload);
+    }
 }
 
 /*
@@ -44,44 +46,41 @@ int kafka_send(void *payload, int payload_len) {
 
 void sniff_packets() {
     unsigned char *buffer = (unsigned char *) malloc(IP_MAXPACKET);
-    int raw_socket = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
+    int raw_socket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
     if (raw_socket < 0) {
         fprintf(stderr, "Socket Error!\n");
         return;
     }
-    ssize_t received_data_size;
     while (keepRunning) {
         // receive a packet
-        received_data_size = recvfrom(raw_socket, buffer, IP_MAXPACKET, 0, NULL, NULL);
-        if (received_data_size < 0) {
+        if (recvfrom(raw_socket, buffer, IP_MAXPACKET, 0, NULL, NULL) < 0) {
             printf("Recvfrom error!\n");
             break;
         }
-        process_packet(buffer, received_data_size);
+        process_packet(buffer);
     }
     close(raw_socket);
     free(buffer);
 }
 
 
-void process_packet(unsigned char *buffer, ssize_t size) {
-    // get IP header and data after IP header
-    struct iphdr *ip_header = (struct iphdr *) buffer;
+void process_packet(unsigned char *buffer) {
+    // get IP header and data after IP header without ethernet header
+    struct iphdr *ip_header = (struct iphdr *) (buffer + sizeof(struct ethhdr));
     unsigned char *ip_data = buffer + ip_header->ihl * 4;
     // insert packet into list
-
-    ssize_t payload = size - ip_header->ihl * 4;
+    ssize_t payload = ntohs(ip_header->tot_len) - ip_header->ihl * 4;
     packet_t *packet = malloc(sizeof(packet_t));
-    packet->src_addr = ip_header->saddr;
-    packet->dst_addr = ip_header->daddr;
+    packet->src_addr = ntohl(ip_header->saddr);
+    packet->dst_addr = ntohl(ip_header->daddr);
 
-    if (ip_header->protocol == 6) { // TCP
+    if (ip_header->protocol == IPPROTO_TCP) { // TCP
         struct tcphdr *tcp_header = (struct tcphdr *) ip_data;
         strcpy(packet->protocol, "TCP");
         packet->src_port = ntohs(tcp_header->source);
         packet->dst_port = ntohs(tcp_header->dest);
         payload -= tcp_header->doff * 4;
-    } else if (ip_header->protocol == 17) { // UDP
+    } else if (ip_header->protocol == IPPROTO_UDP) { // UDP
         struct udphdr *udp_header = (struct udphdr *) ip_data;
         strcpy(packet->protocol, "UDP");
         packet->src_port = ntohs(udp_header->source);
@@ -89,7 +88,6 @@ void process_packet(unsigned char *buffer, ssize_t size) {
         payload -= sizeof(udp_header);
     }
     insert_packet(&list, *packet, payload);
-    //could add format and send if count == 20 --------------------------------------------------------------------------------------------------------------------------------------- :)
     free(packet);
 }
 
@@ -99,70 +97,60 @@ void intHandler(int dummy) {
     keepRunning = false;
 }
 
-void format_ip(unsigned int ip, char* buffer)
-{
+void format_ip(unsigned int ip, char *buffer) {
     unsigned char bytes[4];
     bytes[0] = ip & 0xFF;
     bytes[1] = (ip >> 8) & 0xFF;
     bytes[2] = (ip >> 16) & 0xFF;
-    bytes[3] = (ip >> 24) & 0xFF;   
-    snprintf(buffer,15,"%d.%d.%d.%d", bytes[3], bytes[2], bytes[1], bytes[0]);        
+    bytes[3] = (ip >> 24) & 0xFF;
+    snprintf(buffer, 15, "%d.%d.%d.%d", bytes[3], bytes[2], bytes[1], bytes[0]);
 }
 
-void format_and_send(flow_record_t *temp){
+void format_and_send(flow_record_t *temp) {
     char buffer[2048];
-    temp -> record_count = 21;
+    temp->record_count = MAX_RECORD_ENTRY_COUNT + 1;
 
-      char srcIp[15], dstIp[15];
-      format_ip((temp -> packet).src_addr, srcIp);
-      format_ip((temp -> packet).dst_addr, dstIp);
-      snprintf(buffer, 2048, "%s, %s, %s, %d, %d, ", srcIp, dstIp, (temp -> packet).protocol, (temp -> packet).src_port, (temp -> packet).dst_port);
-      flow_record_entry_t * tmp_ent = temp -> record;
-      while (tmp_ent) {
+    char form_src_ip[15], form_dst_ip[15];
+    format_ip((temp->packet).src_addr, form_src_ip);
+    format_ip((temp->packet).dst_addr, form_dst_ip);
+    snprintf(buffer, 2048, "%s, %s, %s, %d, %d, ", form_src_ip, form_dst_ip, (temp->packet).protocol,
+             (temp->packet).src_port, (temp->packet).dst_port);
+    flow_record_entry_t *tmp_ent = temp->record;
+    while (tmp_ent) {
         char time_stamp[24], buff[50];
-        strftime(time_stamp, 24, "%d-%m-%Y %H:%M:%S", localtime( & (tmp_ent -> time)));
-        if(tmp_ent->next)
-            snprintf(buff, 50, "%ld, %s, ", tmp_ent -> payload_size, time_stamp);
+        strftime(time_stamp, 24, "%d-%m-%Y %H:%M:%S", localtime(&(tmp_ent->time)));
+        if (tmp_ent->next)
+            snprintf(buff, 50, "%ld, %s, ", tmp_ent->payload_size, time_stamp);
         else
-            snprintf(buff, 50, "%ld, %s", tmp_ent -> payload_size, time_stamp);
+            snprintf(buff, 50, "%ld, %s", tmp_ent->payload_size, time_stamp);
         strcat(buffer, buff);
-        tmp_ent = tmp_ent -> next;
-      }
-      size_t len = strlen(buffer);
-      kafka_send(buffer, len);
-      //printf("%s\n",buffer );
-
-
+        tmp_ent = tmp_ent->next;
+    }
+    size_t len = strlen(buffer);
+    kafka_send(buffer, len);
 }
 
 void check_flows() {
-  flow_record_t * temp = list;
-  while (temp != NULL) {
-    
-
-    flow_record_entry_t * record = temp -> record;
-    while (record -> next != NULL) {
-      record = record -> next;
+    flow_record_t *temp = list;
+    while (temp != NULL) {
+        flow_record_entry_t *record = temp->record;
+        // get to the end of records
+        while (record->next != NULL) {
+            record = record->next;
+        }
+        if ((temp->record_count == MAX_RECORD_ENTRY_COUNT) ||
+            ((time(0) - record->time > TIMEOUT) && (temp->record_count < MAX_RECORD_ENTRY_COUNT))) {
+            format_and_send(temp);
+        }
+        temp = temp->next;
     }
-    if ((time(0) - record -> time > 60) && temp -> record_count != 21) {
-      format_and_send(temp);
-
-    } else if (temp -> record_count == 20) {
-      format_and_send(temp);
-     
-    }
-    temp = temp -> next;
-  }
-
 }
 
-void *threadproc(void *arg)
-{
-    while(keepRunning)
-    {
+void *thread_proc(void *arg) {
+    UNUSED(arg);
+    while (keepRunning) {
         sleep(50);
         check_flows();
-
     }
     return 0;
 }
@@ -175,7 +163,6 @@ int main(int argc, char **argv) {
     char topic[256];
     char err_str[512];
     char tmp[16];
-    char buf[2048];
 
     signal(SIGINT, intHandler);
 
@@ -212,20 +199,12 @@ int main(int argc, char **argv) {
     topic_conf = NULL; /* Now owned by topic */
 
     // ****************************
-    // ****** KAFKA  SEND *********
+    // ********* SNIFF ************
     // ****************************
-    // TODO posielanie listu a nie tohto stringu
     pthread_t tid;
-
-    pthread_create(&tid, NULL, &threadproc, NULL);
-    //strcpy(buf, "ahoj");
-    //size_t len = strlen(buf);
-    //kafka_send(buf, len);
-
+    pthread_create(&tid, NULL, &thread_proc, NULL);
     sniff_packets();
     destroy_flow_records(list);
-
-
 
     // ****************************
     // ****** KAFKA DESTROY *********

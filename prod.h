@@ -10,6 +10,7 @@
 #include <netinet/udp.h>
 #include <netinet/tcp.h>
 #include <netinet/ip.h>
+#include <netinet/if_ether.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -21,6 +22,7 @@
 #define KAFKA_TOPIC "quickstart-events"
 
 #define UNUSED(x) (void)(x)
+#define TIMEOUT 60 // seconds
 
 static volatile sig_atomic_t run = 1;
 static volatile bool keepRunning = true;
@@ -39,6 +41,18 @@ int kafka_send(void *payload, int payload_len);
 
 void sniff_packets();
 
-void process_packet(unsigned char *buffer, ssize_t size);
+void process_packet(unsigned char *buffer);
+
+void intHandler(int dummy);
+
+void format_ip(unsigned int ip, char *buffer);
+
+void format_and_send(flow_record_t *temp);
+
+void check_flows();
+
+void *thread_proc(void *arg);
+
+
 
 #endif //_PROD_H_
