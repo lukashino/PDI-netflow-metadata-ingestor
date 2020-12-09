@@ -6,6 +6,10 @@
  */
 static void msg_delivered(rd_kafka_t *rk,
                           const rd_kafka_message_t *rkmessage, void *opaque) {
+    if (rk)
+        if (opaque)
+            printf("msg_delivered");
+
     if (rkmessage->err) {
         printf("FAILED\n");
         // fprintf(stderr, "%% Message delivery failed (broker %"PRId32"): %s\n", rd_kafka_message_broker_id(rkmessage), rd_kafka_err2str(rkmessage->err));
@@ -155,7 +159,7 @@ void check_flows() {
 void *thread_proc(void *arg) {
     UNUSED(arg);
     while (keepRunning) {
-        sleep(50);
+        sleep(10);
         check_flows();
     }
     return 0;

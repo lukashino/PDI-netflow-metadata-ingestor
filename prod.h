@@ -22,7 +22,7 @@
 #define KAFKA_TOPIC "quickstart-events"
 
 #define UNUSED(x) (void)(x)
-#define TIMEOUT 60 // seconds
+#define TIMEOUT 20 // seconds
 
 static volatile sig_atomic_t run = 1;
 static volatile bool keepRunning = true;
