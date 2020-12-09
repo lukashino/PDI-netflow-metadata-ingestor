@@ -33,10 +33,10 @@ flow_record_t *find_flow_record(flow_record_t *list, packet_t *packet) {
     return NULL;
 }
 
-void insert_packet(flow_record_t **list, packet_t packet, ssize_t payload_size) {
+flow_record_t *insert_packet(flow_record_t **list, packet_t packet, ssize_t payload_size) {
     if (*list == NULL) {
         *list = create_flow_record(&packet, payload_size);
-        return;
+        return *list;
     }
     flow_record_t *entry = find_flow_record(*list, &packet);
     if (entry == NULL) {
@@ -48,6 +48,7 @@ void insert_packet(flow_record_t **list, packet_t packet, ssize_t payload_size) 
                 break;
             }
         }
+        return new_record;
     } else if (entry->record_count < MAX_RECORD_ENTRY_COUNT) {
         // packet in list, increment counter, save payload size and timestamp
         entry->record_count = entry->record_count + 1;
@@ -58,7 +59,9 @@ void insert_packet(flow_record_t **list, packet_t packet, ssize_t payload_size) 
                 break;
             }
         }
+        return entry;
     }
+    return NULL;
 }
 
 flow_record_t *create_flow_record(packet_t *data, ssize_t payload_size) {

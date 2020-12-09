@@ -67,12 +67,13 @@ void sniff_packets() {
 void process_packet(unsigned char *buffer) {
     // get IP header and data after IP header without ethernet header
     struct iphdr *ip_header = (struct iphdr *) (buffer + sizeof(struct ethhdr));
-    unsigned char *ip_data = buffer + ip_header->ihl * 4;
+    unsigned char *ip_data = buffer + sizeof(struct ethhdr) + ip_header->ihl * 4;
     // insert packet into list
     ssize_t payload = ntohs(ip_header->tot_len) - ip_header->ihl * 4;
     packet_t *packet = malloc(sizeof(packet_t));
     packet->src_addr = ntohl(ip_header->saddr);
     packet->dst_addr = ntohl(ip_header->daddr);
+    flow_record_t *inserted = NULL;
 
     if (ip_header->protocol == IPPROTO_TCP) { // TCP
         struct tcphdr *tcp_header = (struct tcphdr *) ip_data;
@@ -80,14 +81,19 @@ void process_packet(unsigned char *buffer) {
         packet->src_port = ntohs(tcp_header->source);
         packet->dst_port = ntohs(tcp_header->dest);
         payload -= tcp_header->doff * 4;
+        inserted = insert_packet(&list, *packet, payload);
     } else if (ip_header->protocol == IPPROTO_UDP) { // UDP
         struct udphdr *udp_header = (struct udphdr *) ip_data;
         strcpy(packet->protocol, "UDP");
         packet->src_port = ntohs(udp_header->source);
         packet->dst_port = ntohs(udp_header->dest);
         payload -= sizeof(udp_header);
+        inserted = insert_packet(&list, *packet, payload);
     }
-    insert_packet(&list, *packet, payload);
+    // send if max packet count is reached
+    if (inserted != NULL && inserted->record_count == MAX_RECORD_ENTRY_COUNT) {
+        format_and_send(inserted);
+    }
     free(packet);
 }
 
@@ -120,9 +126,9 @@ void format_and_send(flow_record_t *temp) {
         char time_stamp[24], buff[50];
         strftime(time_stamp, 24, "%d-%m-%Y %H:%M:%S", localtime(&(tmp_ent->time)));
         if (tmp_ent->next)
-            snprintf(buff, 50, "%ld, %s, ", tmp_ent->payload_size, time_stamp);
+            snprintf(buff, 50, "%zd, %s, ", tmp_ent->payload_size, time_stamp);
         else
-            snprintf(buff, 50, "%ld, %s", tmp_ent->payload_size, time_stamp);
+            snprintf(buff, 50, "%zd, %s", tmp_ent->payload_size, time_stamp);
         strcat(buffer, buff);
         tmp_ent = tmp_ent->next;
     }

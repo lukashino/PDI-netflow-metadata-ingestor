@@ -35,7 +35,7 @@ bool compare_packets(packet_t *packet_1, packet_t *packet_2);
 
 flow_record_t *find_flow_record(flow_record_t *list, packet_t *packet);
 
-void insert_packet(flow_record_t **list, packet_t packet, ssize_t payload_size);
+flow_record_t *insert_packet(flow_record_t **list, packet_t packet, ssize_t payload_size);
 
 flow_record_t *create_flow_record(packet_t *data, ssize_t payload_size);
 
