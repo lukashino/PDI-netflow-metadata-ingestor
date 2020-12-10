@@ -15,6 +15,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
+#include <pthread.h>
+#include <getopt.h>
 #include <stdbool.h>
 #include "linked_list.h"
 

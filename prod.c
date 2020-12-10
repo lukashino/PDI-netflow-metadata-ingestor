@@ -1,5 +1,4 @@
 #include "prod.h"
-#include <pthread.h>
 
 /**
  * Message delivery report callback using the richer rd_kafka_message_t object.
@@ -48,12 +47,22 @@ int kafka_send(void *payload, int payload_len) {
     return err;
 }
 
-void sniff_packets() {
+void sniff_packets(char *ifr) {
     unsigned char *buffer = (unsigned char *) malloc(IP_MAXPACKET);
     int raw_socket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
     if (raw_socket < 0) {
         fprintf(stderr, "Socket Error %d!\n", raw_socket);
         return;
+    }
+    size_t len = strlen(ifr);
+    int rc;
+    if(len > 0)
+    if ((rc = setsockopt(raw_socket, SOL_SOCKET, SO_BINDTODEVICE, ifr, len)) < 0)
+    {
+        perror("Setsockopt() error for SO_BINDTODEVICE");
+        printf("%s\n", strerror(errno));
+        close(raw_socket);
+        exit(-1);
     }
     while (keepRunning) {
         // receive a packet
@@ -165,23 +174,57 @@ void *thread_proc(void *arg) {
     return 0;
 }
 
+void printHelp() {
+    printf("%s\n%s\n%s\n%s\n\n", 
+        "    Usage:",
+        "      -i <newtork interface>", 
+        "      -b <broker>", 
+        "      -t <topic>" );
+    exit(0);
+}
 
 int main(int argc, char **argv) {
     UNUSED(argc);
     UNUSED(argv);
     char brokers[1024];
     char topic[256];
+    char interface[128];
     char err_str[512];
     char tmp[16];
+    int opt;
+
 
     signal(SIGINT, intHandler);
 
+    
     // ****************************
     // ****** KAFKA SETUP *********
     // ****************************
     // KEEP IN MAIN
     strcpy(brokers, KAFKA_SERVER_IP);
     strcpy(topic, KAFKA_TOPIC);
+
+    while ((opt = getopt(argc, argv, "hi:t:b:")) != -1) {
+        switch (opt) {
+        case 'i':
+            strcpy(interface, optarg);
+            break;
+        case 'b':
+            strcpy(brokers, optarg);
+            break;
+        case 't':
+            strcpy(topic, optarg);
+            break;
+        case 'h':
+            printHelp();
+            break;
+        case '?':
+            printf("Unknown option `-%c'.\n", optopt);
+            printHelp();
+            break;
+        }
+    }
+
 
     conf = rd_kafka_conf_new();
 
@@ -213,7 +256,7 @@ int main(int argc, char **argv) {
     // ****************************
     pthread_t tid;
     pthread_create(&tid, NULL, &thread_proc, NULL);
-    sniff_packets();
+    sniff_packets(interface);
     destroy_flow_records(list);
 
     // ****************************
