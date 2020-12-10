@@ -159,11 +159,12 @@ void *thread_proc(void *arg) {
 }
 
 void printHelp() {
-    printf("%s\n%s\n%s\n%s\n\n", 
+    printf("%s\n%s\n%s\n%s\n%s\n\n", 
         "    Usage:",
-        "      -i <newtork interface>", 
-        "      -b <broker>", 
-        "      -t <topic>" );
+        "      -i <newtork interface>   ~~~~ sets interface (default all interfaces)", 
+        "      -b <broker>              ~~~~ sets broker    (default 51.23.123.32)", 
+        "      -t <topic>               ~~~~ sets topic     (default quickstart-events)",
+        "      -h                       ~~~~ prints help" );
     exit(0);
 }
 
