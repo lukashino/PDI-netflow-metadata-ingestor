@@ -57,7 +57,7 @@ A test script was prepared to show all the crucial abilities of the Sniffo. It c
 
 1. testcase: Pcap chargen-udp.pcap consisting of 2 UDP packets is replayed 10 times on the selected interface. This means a flow should appear on the reader.py immediately as packet flow reaches 20 packets. Testcase shows the ability to handle UDP packets.
 1. testcase: Pcap SIMULCRYPT.pcap consisting of 90 TCP packets is replayed 3 times on the selected interface. 6 flows should appear on the reader.py as soon as the replay is finished as number of packets reaches at least 20 packets in every flow displayed. Testcase shows the ability to handle TCP packets.
-1. testcase: Pcap chargen-udp.pcap is replayed again for 3 times together with the parameter --unique-ip. This means the the first replay leaves the pcap untouched leading to never displaying on the reader. The second and the third replay modifies one of the IP addresses and thus creates each time a new flow. As it is replayed only 3 times the total number of packets is 6. The flows are shown on the reader later, after the timeout passes and they are flagged as finished.
+1. testcase: Pcap chargen-udp.pcap is replayed again for 3 times together with the parameter --unique-ip. This means the the first replay leaves the pcap untouched leading to never displaying on the reader (because of the first test case). The second and the third replay modifies one of the IP addresses and thus creates each time a new flow. As it is replayed only 3 times the total number of packets is 6. The flows are shown on the reader later, after the timeout passes and they are flagged as finished.
 
 PCAPs were downloaded from https://wiki.wireshark.org/SampleCaptures and are under GNU General Public License version 2.
 
