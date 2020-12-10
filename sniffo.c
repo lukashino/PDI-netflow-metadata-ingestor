@@ -2,7 +2,8 @@
 
 static void msg_delivered(rd_kafka_t *rk,
                           const rd_kafka_message_t *rkmessage, void *opaque) {
-    UNUSED(rk); UNUSED(opaque);
+    UNUSED(rk);
+    UNUSED(opaque);
     if (rkmessage->err) {
         printf("FAILED\n");
     } else {
@@ -40,14 +41,13 @@ void sniff_packets(char *ifr) {
     }
     size_t len = strlen(ifr);
     int rc;
-    if(len > 0)
-    if ((rc = setsockopt(raw_socket, SOL_SOCKET, SO_BINDTODEVICE, ifr, len)) < 0)
-    {
-        perror("Setsockopt() error for SO_BINDTODEVICE");
-        printf("%s\n", strerror(errno));
-        close(raw_socket);
-        exit(-1);
-    }
+    if (len > 0)
+        if ((rc = setsockopt(raw_socket, SOL_SOCKET, SO_BINDTODEVICE, ifr, len)) < 0) {
+            perror("Setsockopt() error for SO_BINDTODEVICE");
+            printf("%s\n", strerror(errno));
+            close(raw_socket);
+            exit(-1);
+        }
     while (keepRunning) {
         // receive a packet
         if (recvfrom(raw_socket, buffer, IP_MAXPACKET, 0, NULL, NULL) < 0) {
@@ -79,6 +79,10 @@ void process_packet(unsigned char *buffer) {
         packet->dst_port = ntohs(tcp_header->dest);
         payload -= tcp_header->doff * 4;
         inserted = insert_packet(&list, *packet, payload);
+        // detect end of the flow
+        if (inserted != NULL && (tcp_header->rst == 1 || (tcp_header->ack == 1 && tcp_header->fin == 1))) {
+            inserted->record_count = MAX_RECORD_ENTRY_COUNT; // mark as max record so it is sent at the end
+        }
     } else if (ip_header->protocol == IPPROTO_UDP) { // UDP
         struct udphdr *udp_header = (struct udphdr *) ip_data;
         strcpy(packet->protocol, "UDP");
@@ -159,12 +163,12 @@ void *thread_proc(void *arg) {
 }
 
 void printHelp() {
-    printf("%s\n%s\n%s\n%s\n%s\n\n", 
-        "    Usage:",
-        "      -i <newtork interface>   ~~~~ sets interface (default all interfaces)", 
-        "      -b <broker>              ~~~~ sets broker    (default 51.23.123.32)", 
-        "      -t <topic>               ~~~~ sets topic     (default pdi)",
-        "      -h                       ~~~~ prints help" );
+    printf("%s\n%s\n%s\n%s\n%s\n\n",
+           "    Usage:",
+           "      -i <newtork interface>   ~~~~ sets interface (default all interfaces)",
+           "      -b <broker>              ~~~~ sets broker    (default 51.23.123.32)",
+           "      -t <topic>               ~~~~ sets topic     (default pdi)",
+           "      -h                       ~~~~ prints help");
     exit(0);
 }
 
@@ -181,7 +185,7 @@ int main(int argc, char **argv) {
 
     signal(SIGINT, intHandler);
 
-    
+
     // ****************************
     // ****** KAFKA SETUP *********
     // ****************************
@@ -191,22 +195,22 @@ int main(int argc, char **argv) {
 
     while ((opt = getopt(argc, argv, "hi:t:b:")) != -1) {
         switch (opt) {
-        case 'i':
-            strcpy(interface, optarg);
-            break;
-        case 'b':
-            strcpy(brokers, optarg);
-            break;
-        case 't':
-            strcpy(topic, optarg);
-            break;
-        case 'h':
-            printHelp();
-            break;
-        case '?':
-            printf("Unknown option `-%c'.\n", optopt);
-            printHelp();
-            break;
+            case 'i':
+                strcpy(interface, optarg);
+                break;
+            case 'b':
+                strcpy(brokers, optarg);
+                break;
+            case 't':
+                strcpy(topic, optarg);
+                break;
+            case 'h':
+                printHelp();
+                break;
+            case '?':
+                printf("Unknown option `-%c'.\n", optopt);
+                printHelp();
+                break;
         }
     }
 
