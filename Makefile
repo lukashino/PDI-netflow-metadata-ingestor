@@ -1,4 +1,4 @@
-BIN=prod
+BIN=sniffo
 LIB=linked_list
 
 all:

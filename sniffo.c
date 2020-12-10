@@ -1,4 +1,4 @@
-#include "prod.h"
+#include "sniffo.h"
 
 static void msg_delivered(rd_kafka_t *rk,
                           const rd_kafka_message_t *rkmessage, void *opaque) {
@@ -224,7 +224,7 @@ int main(int argc, char **argv) {
 
     /* Create Kafka handle */
     if (!(rk = rd_kafka_new(RD_KAFKA_PRODUCER, conf, err_str, sizeof(err_str)))) {
-        fprintf(stderr, "***** KAFKA ***** Failed to create new producer: %s\n", err_str);
+        fprintf(stderr, "***** KAFKA ***** Failed to create new Kafka producer: %s\n", err_str);
         exit(1);
     }
 

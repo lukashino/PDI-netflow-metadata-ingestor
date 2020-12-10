@@ -1,13 +1,14 @@
 # PDI-netflow-metadata-ingestor
-Welcome to the `README.md`, You have made a wise step if you are reading this.
-This project is brought to you by:
-- Adam Masaryk (xmasar15) a.k.a. Maszko
-- Lukáš Šišmiš (xsismi01) a.k.a. Sismo
-- Matúš Švancár (xsvanc06) a.k.a. Svanc
+You have made a wise step if you are reading this.
+
+Devs:
+- Adam Masaryk (xmasar15)
+- Lukáš Šišmiš (xsismi01)
+- Matúš Švancár (xsvanc06)
 
 To get you started on the packet sniffer:
-- install librdkafka library for C producer<br>
-`apt install librdkafka-dev`
+- install librdkafka library<br>
+`sudo apt-get install -y librdkafka-dev`
 - compile the program<br>
 `make`
 - run the program<br>
@@ -23,7 +24,6 @@ To run the reader:
 
 ## run-script.sh
 A test script was prepared to show all the crucial abilities of the Sniffo. It consists of three test cases that are executed in row:
-chargen-udp.pcap  SIMULCRYPT.pcap
 
 1. testcase: Pcap chargen-udp.pcap consisting of 2 UDP packets is replayed 10 times on the selected interface. This means a flow should appear on the reader.py immediately as packet flow reaches 20 packets. Testcase shows the ability to handle UDP packets.
 1. testcase: Pcap SIMULCRYPT.pcap consisting of 90 TCP packets is replayed 3 times on the selected interface. 6 flows should appear on the reader.py as soon as the replay is finished as number of packets reaches at least 20 packets in every flow displayed. Testcase shows the ability to handle TCP packets.
@@ -32,3 +32,5 @@ chargen-udp.pcap  SIMULCRYPT.pcap
 Running the test script:
 - install tcpreplay<br>
 `sudo apt-get install -y tcpreplay`
+- run the script:<br>
+`./run-script [ethernet-interface(to replay on)]`
