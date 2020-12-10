@@ -19,7 +19,7 @@ echo "python3 cons.py"
 read;
 
 # Run the producer (packet sniffer)
-sudo ./prod > prod.output 2>&1 &
+sudo ./prod -i $IFACE > prod.output 2>&1 &
 PID=$!
 echo "$PID" | sudo tee prod.pid # if script fails
 
@@ -42,7 +42,7 @@ read;
 sudo tcpreplay -i $IFACE -l 10 -x 60.0 samples/SIMULCRYPT.pcap
 
 # potom pustim tcpreplay UDP s 3 paketmi a --unique-ip, po timeout-e sa mu to ukaze na readerovi 
-echo "sudo tcpreplay -i $IFACE -l 3 samples/chargen-udp.pcap";
+echo "sudo tcpreplay -i $IFACE -l 3 --unique-ip samples/chargen-udp.pcap";
 echo "PCAP contents:";
 tcpdump -vvv -xx -XX -n -N --number -r samples/chargen-udp.pcap
 echo "Press enter to play the pcap";
