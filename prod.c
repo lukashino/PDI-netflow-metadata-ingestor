@@ -1,21 +1,13 @@
 #include "prod.h"
 #include <pthread.h>
 
-/**
- * Message delivery report callback using the richer rd_kafka_message_t object.
- */
 static void msg_delivered(rd_kafka_t *rk,
                           const rd_kafka_message_t *rkmessage, void *opaque) {
-    if (rk)
-        if (opaque)
-            printf("msg_delivered");
-
+    UNUSED(rk); UNUSED(opaque);
     if (rkmessage->err) {
         printf("FAILED\n");
-        // fprintf(stderr, "%% Message delivery failed (broker %"PRId32"): %s\n", rd_kafka_message_broker_id(rkmessage), rd_kafka_err2str(rkmessage->err));
     } else {
         printf("DELIVERED\n");
-        // fprintf(stderr, "%% Message delivered (%zd bytes, offset %"PRId64", partition %"PRId32", broker %"PRId32"): %.*s\n", rkmessage->len, rkmessage->offset, rkmessage->partition, rd_kafka_message_broker_id(rkmessage), (int)rkmessage->len, (const char *)rkmessage->payload);
     }
 }
 
@@ -27,24 +19,16 @@ int kafka_send(void *payload, int payload_len) {
 
     if (rd_kafka_produce(
             rkt, RD_KAFKA_PARTITION_UA, RD_KAFKA_MSG_F_COPY,
-            /* Payload and length */
             payload, payload_len,
-            /* Optional key and its length */
             NULL, 0,
-            /* Message opaque, provided in
-                * delivery report callback as
-                * msg_opaque. */
             NULL) == -1) {
         err = rd_kafka_last_error();
     }
 
-    fprintf(stderr, "%% Sent %d bytes to topic %s partition %i\n",
+    fprintf(stderr, "***** KAFKA ***** Sent %d bytes to topic %s partition %i\n",
             payload_len, rd_kafka_topic_name(rkt), RD_KAFKA_PARTITION_UA);
 
-
-    /* Poll to handle delivery reports */
     rd_kafka_poll(rk, 0);
-
     return err;
 }
 
@@ -196,12 +180,12 @@ int main(int argc, char **argv) {
 
     /* Create Kafka handle */
     if (!(rk = rd_kafka_new(RD_KAFKA_PRODUCER, conf, err_str, sizeof(err_str)))) {
-        fprintf(stderr, "%% Failed to create new producer: %s\n", err_str);
+        fprintf(stderr, "***** KAFKA ***** Failed to create new producer: %s\n", err_str);
         exit(1);
     }
 
     if (rd_kafka_brokers_add(rk, brokers) == 0) {
-        fprintf(stderr, "%% No valid brokers specified\n");
+        fprintf(stderr, "***** KAFKA ***** No valid brokers specified\n");
         exit(1);
     }
 

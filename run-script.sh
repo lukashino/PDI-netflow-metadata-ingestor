@@ -50,6 +50,7 @@ read;
 
 sudo tcpreplay -i $IFACE -l 3 --unique-ip samples/chargen-udp.pcap
 
+echo "WAITING FOR THE FLOW TO END (UDP flow timeout)"
 echo "Press enter to exit"
 read
 
