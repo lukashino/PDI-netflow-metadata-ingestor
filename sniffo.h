@@ -21,7 +21,7 @@
 #include "linked_list.h"
 
 #define KAFKA_SERVER_IP "51.116.188.112:9092"
-#define KAFKA_TOPIC "quickstart-events"
+#define KAFKA_TOPIC "pdi"
 
 #define UNUSED(x) (void)(x)
 #define TIMEOUT 20 // seconds

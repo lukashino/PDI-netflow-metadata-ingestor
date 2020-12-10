@@ -12,7 +12,7 @@ To get you started on the packet sniffer:
 - compile the program<br>
 `make`
 - run the program<br>
-`./sniffo [-i "ethernet-interface(eth0)"|default(all)] [-b "IP address and port of the Kafka broker"|default(51.116.188.112:9092)] [-t "Kafka topic"|default(quickstart-events)]`
+`./sniffo [-i "ethernet-interface(eth0)"|default(all)] [-b "IP address and port of the Kafka broker"|default(51.116.188.112:9092)] [-t "Kafka topic"|default(pdi)]`
 
 To be able to see what Sniffo sends to Kafka, you need to run Kafka reader, which essentially prints out all the information that Kafka receives on the particular topic. 
 
@@ -20,7 +20,7 @@ To run the reader:
 - Install kafka-python library<br>
 `pip3 install kafka-python`
 - Run the reader<br>
-`python3 reader.py [-b "IP address and port of the Kafka broker"|default(51.116.188.112:9092)] [-t "Kafka topic"|default(quickstart-events)]`
+`python3 reader.py [-b "IP address and port of the Kafka broker"|default(51.116.188.112:9092)] [-t "Kafka topic"|default(pdi)]`
 
 ## run-script.sh
 A test script was prepared to show all the crucial abilities of the Sniffo. It consists of three test cases that are executed in row:

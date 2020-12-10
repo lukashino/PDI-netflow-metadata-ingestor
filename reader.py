@@ -3,7 +3,7 @@ from json import loads
 import sys,getopt
 
 broker = ['51.116.188.112:9092']
-topic = 'quickstart-events'
+topic = 'pdi'
 full_cmd_arguments = sys.argv
 argument_list = full_cmd_arguments[1:]
 short_options = "b:t:h"
@@ -17,7 +17,7 @@ for current_argument, current_value in arguments:
     if current_argument in ("-b"):
         broker[0] = current_value
     elif current_argument in ("-h"):
-        print ("    Usage:\n     -b <broker>   ~~~~ sets broker (default 51.116.188.112:9092)\n     -t <topic>    ~~~~ sets topic  (default quickstart-events)")
+        print ("    Usage:\n     -b <broker>   ~~~~ sets broker (default 51.116.188.112:9092)\n     -t <topic>    ~~~~ sets topic  (default pdi)")
         sys.exit(0)
     elif current_argument in ("-t"):
         topic = current_value

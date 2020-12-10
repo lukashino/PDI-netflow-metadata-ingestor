@@ -163,7 +163,7 @@ void printHelp() {
         "    Usage:",
         "      -i <newtork interface>   ~~~~ sets interface (default all interfaces)", 
         "      -b <broker>              ~~~~ sets broker    (default 51.23.123.32)", 
-        "      -t <topic>               ~~~~ sets topic     (default quickstart-events)",
+        "      -t <topic>               ~~~~ sets topic     (default pdi)",
         "      -h                       ~~~~ prints help" );
     exit(0);
 }
